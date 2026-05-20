@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KNS GROUP - Ultimate ERP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f1a; color: #f1f5f9; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .custom-card { background: #161e2d; border: 1px solid #1e293b; }
+    </style>
+</head>
+<body onload="loadData()">
+
+    <div class="max-w-md mx-auto min-h-screen flex flex-col pb-24">
+        
+        <!-- HEADER -->
+        <header class="p-5 flex justify-between items-center bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-500 p-2.5 rounded-xl text-slate-900 shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <h1 class="font-black text-xl tracking-tighter">KNS<span class="text-emerald-400">GROUP</span></h1>
+            </div>
+            <div class="text-right">
+                <p id="navBalanceDisplay" class="text-lg font-black text-white leading-none">₹0</p>
+                <span class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Available Funds</span>
+            </div>
+        </header>
+
+        <!-- MAIN CONTAINER -->
+        <main class="p-4 flex-1">
+            
+            <!-- HOME PAGE -->
+            <div id="homePage" class="page active space-y-6">
+                <div class="bg-gradient-to-br from-slate-800 to-slate-950 p-6 rounded-[2.5rem] border border-slate-700 shadow-2xl">
+                    <p class="text-xs text-slate-400 font-medium">Total Liquidity</p>
+                    <h2 class="text-4xl font-black mt-1" id="totalBalanceDisplay">₹0.00</h2>
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-700/50 text-center">
+                            <span class="text-[9px] text-emerald-400 font-bold block mb-1">TOTAL CASH</span>
+                            <span id="sumCash" class="text-sm font-bold">₹0</span>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-700/50 text-center">
+                            <span class="text-[9px] text-blue-400 font-bold block mb-1">TOTAL BANK</span>
+                            <span id="sumBank" class="text-sm font-bold">₹0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DAILY LEDGER PAGE -->
+            <div id="dailyPage" class="page space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-black text-lg">Daily Ledger</h3>
+                    <button onclick="openDailyTxnModal()" class="bg-emerald-500 text-slate-950 w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <input type="date" id="dateFilter" onchange="updateUI()" class="w-full bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 outline-none">
+                <div id="dailyHistoryContainer" class="space-y-2"></div>
+            </div>
+
+            <!-- ACCOUNTS PAGE -->
+            <div id="accountsPage" class="page space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-black text-lg">Accounts & Wallets</h3>
+                    <div class="flex gap-2">
+                        <button onclick="openTransferModal()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-black"><i class="fa-solid fa-right-left mr-1"></i> TRANSFER</button>
+                        <button onclick="openAccountModal()" class="bg-emerald-500 text-slate-950 px-3 py-2 rounded-xl text-[10px] font-black"><i class="fa-solid fa-plus mr-1"></i> ADD</button>
+                    </div>
+                </div>
+                <div id="accountsContainer" class="space-y-3"></div>
+            </div>
+
+            <!-- PARTNERS PAGE -->
+            <div id="partnersPage" class="page space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-black text-lg">Partners Ledger</h3>
+                    <button onclick="openPartnerModal()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black">ADD PARTNER</button>
+                </div>
+                <div id="partnersContainer" class="space-y-3"></div>
+            </div>
+
+            <!-- SETTINGS PAGE & RECYCLE BIN -->
+            <div id="settingsPage" class="page space-y-4">
+                <h3 class="font-black text-lg">App Settings</h3>
+                <div class="space-y-3">
+                    <button onclick="window.print()" class="w-full custom-card p-4 rounded-2xl flex items-center justify-between">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-file-pdf text-rose-500"></i><span class="text-sm font-bold">Download Report (Print)</span></div>
+                        <i class="fa-solid fa-chevron-right text-slate-700"></i>
+                    </button>
+                <div class="custom-card p-2 rounded-[1.5rem]">
+    <h3 class="font-black text-sm text-blue-400 mb-4 uppercase tracking-wider">Backup & Restore</h1>
+    <div class="space-y-1">
+        <button onclick="exportBackup()" class="w-full bg-blue-600 p-2 rounded-xl font-black text-xs uppercase">
+            <i class="fa-solid fa-download mr-2"></i> Export Backup
+        </button>
+        <button onclick="document.getElementById('restoreFile').click()" class="w-full bg-emerald-600 p-2 rounded-2xl font-black text-xs uppercase">
+            <i class="fa-solid fa-upload mr-2"></i> Import Backup
+        </button>
+        <input type="file" id="restoreFile" accept=".json" class="hidden" onchange="importBackup(event)">
+        <p class="text-[9px] text-slate-500 text-center mt-2">നിന്റെ എല്ലാ ഡാറ്റയും JSON ഫയലായി സേവ് ചെയ്യും</p>
+    </div>
+</div>    
+                    <button onclick="resetData()" class="w-full custom-card p-4 rounded-2xl flex items-center justify-between border-rose-900/30">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-trash-can text-rose-500"></i><span class="text-sm font-bold text-rose-500">Reset All Data</span></div>
+                        <i class="fa-solid fa-chevron-right text-slate-700"></i>
+                    </button>
+                </div>
+
+                <div class="pt-4">
+                    <h4 class="font-black text-sm text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-dumpster-fire mr-1 text-orange-400"></i> Recycle Bin (Trash)</h4>
+                    <div id="trashContainer" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- ACCOUNT DETAIL PAGE (WITH BACK BUTTON) -->
+            <div id="accountDetailPage" class="page space-y-6">
+                <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-xl border border-slate-800">
+                    <button onclick="switchPage('accounts')" class="text-emerald-400 text-xs font-black uppercase flex items-center gap-2 px-2 py-1 bg-slate-800 rounded-lg hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-arrow-left text-sm"></i> Back
+                    </button>
+                    <button onclick="openAccountModal(activeAccountId)" class="text-blue-400 text-xs font-bold uppercase"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit Account</button>
+                </div>
+                <div class="custom-card p-6 rounded-[2rem] border-l-4 border-l-emerald-500 flex justify-between items-start">
+                    <div>
+                        <h2 id="adName" class="text-2xl font-black text-white">Name</h2>
+                        <p id="adCat" class="text-[10px] text-slate-500 tracking-widest mt-1 uppercase">Category</p>
+                        <h3 id="adBalance" class="text-3xl font-black text-emerald-400 mt-4">₹0.00</h3>
+                    </div>
+                    <button onclick="deleteAccountProfile(activeAccountId)" class="bg-rose-950/40 text-rose-500 border border-rose-900/60 text-[10px] px-2.5 py-1.5 rounded-xl font-bold uppercase"><i class="fa-solid fa-trash mr-1"></i> Delete Account</button>
+                </div>
+                <div id="accountTxnContainer" class="space-y-2"></div>
+            </div>
+
+            <!-- DEEP PARTNER DETAIL PAGE (WITH BACK BUTTON) -->
+            <div id="partnerDetailPage" class="page space-y-6">
+                <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-xl border border-slate-800">
+                    <button onclick="switchPage('partners')" class="text-blue-400 text-xs font-black uppercase flex items-center gap-2 px-2 py-1 bg-slate-800 rounded-lg hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-arrow-left text-sm"></i> Back
+                    </button>
+                    <div class="flex gap-3">
+                        <button onclick="openPartnerModal(activePartnerId)" class="text-blue-400 text-xs font-bold uppercase"><i class="fa-solid fa-user-pen mr-1"></i> Edit Profile</button>
+                        <button onclick="deletePartnerProfile()" class="text-rose-500 text-xs font-bold uppercase"><i class="fa-solid fa-user-xmark mr-1"></i> Delete Profile</button>
+                    </div>
+                </div>
+                <div class="custom-card p-6 rounded-[2rem] border-l-4 border-l-blue-500">
+                    <h2 id="dpName" class="text-2xl font-black text-white">Partner Name</h2>
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-800/60">
+                        <div>
+                            <span class="text-[9px] text-emerald-400 font-bold block uppercase tracking-wider">ഇങ്ങോട്ട് തരാനുള്ളത്</span>
+                            <span id="dpReceivable" class="text-md font-black text-white">₹0</span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-rose-400 font-bold block uppercase tracking-wider">അങ്ങോട്ട് കൊടുക്കാനുള്ളത്</span>
+                            <span id="dpPayable" class="text-md font-black text-white">₹0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-t border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase font-bold">Net Settlement Balance</span>
+                        <h3 id="dpBalance" class="text-2xl font-black text-blue-400 mt-0.5">₹0.00</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="openPartnerPayModal('Receive')" class="bg-emerald-600 p-4 rounded-2xl font-black text-xs uppercase shadow-lg"><i class="fa-solid fa-arrow-down-long mr-1"></i> പണം വാങ്ങി (Receive)</button>
+                    <button onclick="openPartnerPayModal('Pay')" class="bg-rose-600 p-4 rounded-2xl font-black text-xs uppercase shadow-lg"><i class="fa-solid fa-arrow-up-long mr-1"></i> പണം കൊടുത്തു (Pay)</button>
+                </div>
+
+                <h3 class="font-bold text-xs tracking-wider text-slate-400 uppercase mt-4">Deep Statement History</h3>
+                <div id="partnerTxnContainer" class="space-y-2"></div>
+            </div>
+
+        </main>
+
+        <!-- BOTTOM NAVIGATION -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/90 backdrop-blur-md border-t border-slate-800 p-4 flex justify-around items-center rounded-t-[2.5rem] z-50 shadow-2xl">
+            <button onclick="switchPage('home', this)" class="nav-btn text-emerald-400"><i class="fa-solid fa-house-chimney text-lg"></i></button>
+            <button onclick="switchPage('daily', this)" class="nav-btn text-slate-500"><i class="fa-solid fa-list-ul text-lg"></i></button>
+            <button onclick="switchPage('accounts', this)" class="nav-btn text-slate-500"><i class="fa-solid fa-vault text-lg"></i></button>
+            <button onclick="switchPage('partners', this)" class="nav-btn text-slate-500"><i class="fa-solid fa-user-group text-lg"></i></button>
+            <button onclick="switchPage('settings', this)" class="nav-btn text-slate-500"><i class="fa-solid fa-gear text-lg"></i></button>
+        </nav>
+    </div>
+
+    <!-- MAIN MODAL ENGINE (DAILY IN/OUT & EDITING) -->
+    <div id="dailyTxnModal" class="fixed inset-0 bg-black/90 z-[100] flex items-end hidden" onclick="closeModal('dailyTxnModal')">
+        <div class="bg-slate-900 w-full p-8 rounded-t-[3rem] space-y-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center">
+                <h3 id="dtModalTitle" class="font-black text-sm uppercase text-slate-400">Add/Edit Transaction</h3>
+                <button onclick="closeModal('dailyTxnModal')" class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-lg">Close</button>
+            </div>
+            <input type="date" id="dtDate" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700 text-xs">
+            <div id="modalTxnTypeContainer" class="grid grid-cols-2 gap-2">
+                <button id="btnInc" onclick="setTxnType('Income')" class="p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 text-emerald-400 font-black">INCOME</button>
+                <button id="btnExp" onclick="setTxnType('Expense')" class="p-4 rounded-2xl border-2 border-slate-800 text-slate-500 font-black">EXPENSE</button>
+            </div>
+            <input type="text" id="dtDesc" placeholder="Description / Particulars" class="w-full p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700">
+            <select id="dtAccount" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700"></select>
+            <input type="number" id="dtAmount" placeholder="Amount (₹)" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700">
+            <button onclick="saveDailyTxn()" class="w-full bg-emerald-500 p-4 rounded-2xl font-black text-slate-950 uppercase">Apply & Sync Changes</button>
+        </div>
+    </div>
+
+    <!-- INTERNAL TRANSFER MODAL -->
+    <div id="transferModal" class="fixed inset-0 bg-black/90 z-[100] flex items-end hidden" onclick="closeModal('transferModal')">
+        <div class="bg-slate-900 w-full p-8 rounded-t-[3rem] space-y-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center">
+                <h3 class="font-black text-xl">Internal Transfer</h3>
+                <button onclick="closeModal('transferModal')" class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-lg">Close</button>
+            </div>
+            <select id="tfFrom" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700"></select>
+            <div class="text-center text-slate-600"><i class="fa-solid fa-arrow-down"></i></div>
+            <select id="tfTo" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700"></select>
+            <input type="number" id="tfAmount" placeholder="Amount" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700">
+            <button onclick="processTransfer()" class="w-full bg-blue-500 p-4 rounded-2xl font-black uppercase">Confirm Transfer</button>
+        </div>
+    </div>
+
+    <!-- ACCOUNT PROFILE CREATION / EDITING MODAL -->
+    <div id="accountModal" class="fixed inset-0 bg-black/90 z-[100] flex items-end hidden" onclick="closeModal('accountModal')">
+        <div class="bg-slate-900 w-full p-8 rounded-t-[3rem] space-y-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center">
+                <h3 id="accModalTitle" class="font-black text-xl uppercase tracking-tighter">New Account</h3>
+                <button onclick="closeModal('accountModal')" class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-lg">Close</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="p-4 bg-slate-800 rounded-2xl text-center text-xs font-bold uppercase cursor-pointer"><input type="radio" name="aCat" id="catCash" value="Cash" checked> CASH</label>
+                <label class="p-4 bg-slate-800 rounded-2xl text-center text-xs font-bold uppercase cursor-pointer"><input type="radio" name="aCat" id="catBank" value="Bank"> BANK</label>
+            </div>
+            <input type="text" id="aName" placeholder="Account Name" class="w-full p-4 bg-slate-800 rounded-2xl">
+            <input type="number" id="aBal" placeholder="Current Balance" class="w-full p-4 bg-slate-800 rounded-2xl">
+            <button onclick="saveAccount()" class="w-full bg-emerald-500 p-4 rounded-2xl font-black text-slate-950 uppercase">Save Account Profile</button>
+        </div>
+    </div>
+
+    <!-- PARTNER PROFILE CREATION / EDITING MODAL -->
+    <div id="partnerModal" class="fixed inset-0 bg-black/90 z-[100] flex items-end hidden" onclick="closeModal('partnerModal')">
+        <div class="bg-slate-900 w-full p-8 rounded-t-[3rem] space-y-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center">
+                <h3 id="partModalTitle" class="font-black text-xl uppercase tracking-tighter">Add New Partner</h3>
+                <button onclick="closeModal('partnerModal')" class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-lg">Close</button>
+            </div>
+            <input type="text" id="pName" placeholder="Partner Full Name" class="w-full p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700">
+            
+            <div class="space-y-2 p-4 bg-slate-950/40 rounded-2xl border border-slate-800/80">
+                <p class="text-[10px] font-bold text-slate-500 uppercase">Initial Ledger setup</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-[9px] text-slate-400 block mb-1">ഇങ്ങോട്ട് തരാനുള്ളത്</span>
+                        <input type="number" id="pReceivableInit" placeholder="₹0" class="w-full p-3 bg-slate-800 rounded-xl text-xs">
+                    </div>
+                    <div>
+                        <span class="text-[9px] text-slate-400 block mb-1">അങ്ങോട്ട് കൊടുക്കാനുള്ളത്</span>
+                        <input type="number" id="pPayableInit" placeholder="₹0" class="w-full p-3 bg-slate-800 rounded-xl text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="savePartner()" class="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-sm">Save Partner Profile</button>
+        </div>
+    </div>
+
+    <!-- PARTNER PAYMENT SETTLEMENT MODAL -->
+    <div id="partnerPayModal" class="fixed inset-0 bg-black/90 z-[100] flex items-end hidden" onclick="closeModal('partnerPayModal')">
+        <div class="bg-slate-900 w-full p-8 rounded-t-[3rem] space-y-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center">
+                <h3 id="ppTitle" class="font-black text-emerald-400 text-md uppercase tracking-wider">PARTNER SETTLEMENT</h3>
+                <button onclick="closeModal('partnerPayModal')" class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-lg">Close</button>
+            </div>
+            <label class="text-[10px] font-bold text-slate-400 block mb-[-8px]">വോളറ്റ് തിരഞ്ഞെടുക്കുക:</label>
+            <select id="ppAccount" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700 outline-none"></select>
+            <input type="number" id="ppAmount" placeholder="Enter Settlement Amount" class="w-full p-4 bg-slate-800 rounded-2xl border border-slate-700 outline-none">
+            <button onclick="processPartnerPayment()" class="w-full bg-emerald-500 p-4 rounded-2xl font-black text-slate-950 uppercase tracking-wide">Confirm & Sync Accounts</button>
+        </div>
+    </div>
+
+    <!-- JAVA-SCRIPT CORE ENGINE WITH ROLLBACK & DEEP EDITING -->
+    <script>
+        let accounts = [];
+        let partners = [];
+        let transactions = [];
+        let trashBin = [];
+        
+        let activePartnerId = null;
+        let activeAccountId = null;
+        let editingTxnId = null;
+        let editingAccountId = null;
+        let editingPartnerId = null;
+        
+        let currentTxnType = 'Income';
+        let activePPType = null; 
+
+        function saveData() {
+            localStorage.setItem('finPro_v3_accounts', JSON.stringify(accounts));
+            localStorage.setItem('finPro_v3_partners', JSON.stringify(partners));
+            localStorage.setItem('finPro_v3_transactions', JSON.stringify(transactions));
+            localStorage.setItem('finPro_v3_trash', JSON.stringify(trashBin));
+            updateUI();
+        }
+
+        function loadData() {
+            accounts = JSON.parse(localStorage.getItem('finPro_v3_accounts')) || [];
+            partners = JSON.parse(localStorage.getItem('finPro_v3_partners')) || [];
+            transactions = JSON.parse(localStorage.getItem('finPro_v3_transactions')) || [];
+            trashBin = JSON.parse(localStorage.getItem('finPro_v3_trash')) || [];
+            document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+            updateUI();
+        }
+
+        function resetData() { 
+            if(confirm("ശ്രദ്ധിക്കുക! നിങ്ങളുടെ എല്ലാ ഡാറ്റയും എന്നെന്നേക്കുമായി നഷ്ടപ്പെടും. തുടരണോ?")) { 
+                localStorage.clear(); 
+                location.reload(); 
+            } 
+        }
+
+        function clearInputs(ids) {
+            ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+        }
+
+        function switchPage(id, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id + 'Page').classList.add('active');
+            if(btn) {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-emerald-400', 'text-slate-500'));
+                btn.classList.replace('text-slate-500', 'text-emerald-400');
+            }
+        }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function setTxnType(t) {
+            currentTxnType = t;
+            const bI = document.getElementById('btnInc'), bE = document.getElementById('btnExp');
+            if(t === 'Income') { 
+                bI.className = "p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 text-emerald-400 font-black"; 
+                bE.className = "p-4 rounded-2xl border-2 border-slate-800 text-slate-500 font-black"; 
+            } else { 
+                bE.className = "p-4 rounded-2xl border-2 border-rose-500 bg-rose-500/10 text-rose-400 font-black"; 
+                bI.className = "p-4 rounded-2xl border-2 border-slate-800 text-slate-500 font-black"; 
+            }
+        }
+
+        // --- ACCOUNT PROFILES PIPELINE ---
+        function openAccountModal(id = null) {
+            editingAccountId = id;
+            if(id) {
+                document.getElementById('accModalTitle').innerText = "Edit Account Profile";
+                const acc = accounts.find(a => a.id == id);
+                document.getElementById('aName').value = acc.name;
+                document.getElementById('aBal').value = acc.balance;
+                if(acc.category === 'Cash') document.getElementById('catCash').checked = true;
+                else document.getElementById('catBank').checked = true;
+            } else {
+                document.getElementById('accModalTitle').innerText = "Create New Account";
+                clearInputs(['aName', 'aBal']);
+            }
+            openModal('accountModal');
+        }
+
+        function saveAccount() {
+            const name = document.getElementById('aName').value.trim();
+            const bal = parseFloat(document.getElementById('aBal').value) || 0;
+            const cat = document.querySelector('input[name="aCat"]:checked').value;
+            if(!name) return alert("ദയവായി ഒരു അക്കൗണ്ട് പേര് നൽകുക!");
+
+            if(editingAccountId) {
+                const acc = accounts.find(a => a.id == editingAccountId);
+                transactions.forEach(t => { if(t.accId == acc.id) t.accName = name; });
+                acc.name = name; acc.balance = bal; acc.category = cat;
+                editingAccountId = null;
+            } else {
+                accounts.push({ id: Date.now(), name: name, category: cat, balance: bal });
+            }
+            saveData(); closeModal('accountModal');
+            if(activeAccountId) viewAccount(activeAccountId);
+        }
+
+        function deleteAccountProfile(id) {
+            if(!confirm("Are you sure you want to delete this Account? ഈ അക്കൗണ്ടിലുള്ള എല്ലാ ഹിസ്റ്ററിയും ഇല്ലാതാകും!")) return;
+            transactions = transactions.filter(t => t.accId != id && t.fromAccId != id && t.toAccId != id);
+            accounts = accounts.filter(a => a.id != id);
+            saveData(); switchPage('accounts');
+        }
+
+        function viewAccount(id) {
+            activeAccountId = id; 
+            const acc = accounts.find(a => a.id == id);
+            if(!acc) return switchPage('accounts');
+            document.getElementById('adName').innerText = acc.name;
+            document.getElementById('adCat').innerText = acc.category;
+            document.getElementById('adBalance').innerText = `₹${acc.balance.toLocaleString()}`;
+            
+            const cont = document.getElementById('accountTxnContainer');
+            const list = transactions.filter(t => t.accId == id || t.fromAccId == id || t.toAccId == id);
+            
+            cont.innerHTML = list.length ? '' : '<p class="text-center text-slate-700 py-10">ഇതുവരെ റെക്കോർഡുകൾ ഒന്നുമില്ല</p>';
+            list.slice().reverse().forEach(t => {
+                let colorClass = 'text-white'; let sign = '';
+                if (t.type === 'Income' || t.type === 'Receive') { colorClass = 'text-emerald-400'; sign='+'; }
+                else if (t.type === 'Expense' || t.type === 'Pay') { colorClass = 'text-rose-500'; sign='-'; }
+                else if (t.type === 'Transfer') {
+                    colorClass = t.fromAccId == id ? 'text-rose-400' : 'text-blue-400';
+                    sign = t.fromAccId == id ? '-' : '+';
+                }
+
+                cont.innerHTML += `<div class="custom-card p-4 rounded-2xl flex justify-between items-center">
+                    <div class="text-xs"><span>${t.date}</span><h4 class="font-bold">${t.desc || (t.partnerName + ' ('+t.type+')')}</h4></div>
+                    <div class="flex items-center gap-2">
+                        <b class="${colorClass} text-xs mr-2">${sign}₹${t.amount.toLocaleString()}</b>
+                        <button onclick="openDailyTxnModal(${t.id})"><i class="fa-solid fa-pen-to-square text-slate-500 hover:text-blue-400 p-2 text-xs"></i></button>
+                        <button onclick="executeTrashPurge(${t.id})"><i class="fa-solid fa-trash-can text-slate-600 hover:text-rose-500 p-2 text-xs"></i></button>
+                    </div>
+                </div>`;
+            });
+            switchPage('accountDetail');
+        }
+
+        // --- PARTNER ERP PROFILE PIPELINE ---
+        function openPartnerModal(id = null) {
+            editingPartnerId = id;
+            if(id) {
+                document.getElementById('partModalTitle').innerText = "Edit Partner Profile";
+                const p = partners.find(part => part.id == id);
+                document.getElementById('pName').value = p.name;
+                document.getElementById('pReceivableInit').value = p.receivable;
+                document.getElementById('pPayableInit').value = p.payable;
+            } else {
+                document.getElementById('partModalTitle').innerText = "Add New Partner";
+                clearInputs(['pName', 'pReceivableInit', 'pPayableInit']);
+            }
+            openModal('partnerModal');
+        }
+
+        function savePartner() {
+            const name = document.getElementById('pName').value.trim();
+            const recv = parseFloat(document.getElementById('pReceivableInit').value) || 0;
+            const pay = parseFloat(document.getElementById('pPayableInit').value) || 0;
+            if(!name) return alert("ദയവായി പാർട്ണറുടെ പേര് നൽകുക!");
+
+            if(editingPartnerId) {
+                const p = partners.find(part => part.id == editingPartnerId);
+                transactions.forEach(t => { if(t.partnerName === p.name) t.partnerName = name; });
+                p.txns.forEach(t => { t.partnerName = name; });
+                p.name = name; p.receivable = recv; p.payable = pay;
+                editingPartnerId = null;
+            } else {
+                partners.push({ id: Date.now(), name: name, receivable: recv, payable: pay, txns: [] });
+            }
+            saveData(); closeModal('partnerModal');
+            if(activePartnerId) viewPartner(activePartnerId);
+        }
+
+        function deletePartnerProfile() {
+            if(!confirm("Are you sure you want to delete this profile? പാർട്ണറുടെ പേരിൽ ഉള്ള ട്രാൻസാക്ഷൻ ഹിസ്റ്ററിയും നഷ്ടപ്പെടും.")) return;
+            const p = partners.find(x => x.id == activePartnerId);
+            transactions = transactions.filter(t => t.partnerName !== p.name);
+            partners = partners.filter(x => x.id != activePartnerId);
+            saveData(); switchPage('partners');
+        }
+
+        function viewPartner(id) {
+            activePartnerId = id; 
+            const p = partners.find(x => x.id == id);
+            if(!p) return switchPage('partners');
+            
+            const netBalance = p.receivable - p.payable;
+            let netString = "";
+            if(netBalance > 0) {
+                netString = `₹${netBalance.toLocaleString()} (ഇങ്ങോട്ട് കിട്ടാനുണ്ട്)`;
+                document.getElementById('dpBalance').className = "text-2xl font-black text-emerald-400 mt-0.5";
+            } else if(netBalance < 0) {
+                netString = `₹${Math.abs(netBalance).toLocaleString()} (അങ്ങോട്ട് കൊടുക്കാനുണ്ട്)`;
+                document.getElementById('dpBalance').className = "text-2xl font-black text-rose-500 mt-0.5";
+            } else {
+                netString = "₹0.00 (കണക്കുകൾ തുല്യമാണ്)";
+                document.getElementById('dpBalance').className = "text-2xl font-black text-slate-400 mt-0.5";
+            }
+
+            document.getElementById('dpName').innerText = p.name;
+            document.getElementById('dpReceivable').innerText = `₹${p.receivable.toLocaleString()}`;
+            document.getElementById('dpPayable').innerText = `₹${p.payable.toLocaleString()}`;
+            document.getElementById('dpBalance').innerText = netString;
+            
+            const cont = document.getElementById('partnerTxnContainer');
+            cont.innerHTML = p.txns.length ? '' : '<p class="text-center text-slate-700 py-10">ഇതുവരെ ഹിസ്റ്ററി ഒന്നുമില്ല</p>';
+            
+            p.txns.slice().reverse().forEach(t => {
+                let textTheme = t.type === 'Receive' ? 'text-emerald-400' : 'text-rose-500';
+                let sign = t.type === 'Receive' ? '+' : '-';
+                cont.innerHTML += `<div class="custom-card p-4 rounded-2xl flex justify-between items-center">
+                    <div class="text-xs">
+                        <span class="text-slate-500 text-[10px]">${t.date}</span>
+                        <h4 class="font-bold text-white">${t.type === 'Receive' ? 'പണം വാങ്ങി വോളറ്റിലേക്ക് ഇട്ടു' : 'വോലറ്റിൽ നിന്നും പണം കൊടുത്തു'}</h4>
+                        <p class="text-[9px] text-blue-400 font-bold uppercase mt-0.5">Wallet: ${t.accName}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <b class="${textTheme} text-xs font-black mr-2">${sign}₹${t.amount.toLocaleString()}</b>
+                        <button onclick="openDailyTxnModal(${t.id})"><i class="fa-solid fa-pen-to-square text-slate-500 hover:text-blue-400 p-2 text-xs"></i></button>
+                        <button onclick="executeTrashPurge(${t.id})"><i class="fa-solid fa-trash-can text-slate-600 hover:text-rose-500 p-2 text-xs"></i></button>
+                    </div>
+                </div>`;
+            });
+            switchPage('partnerDetail');
+        }
+
+        // --- TRANSACTION REVERSAL ENGINE & AUTO RE-BALANCING ---
+        function rollbackTransactionMechanics(t) {
+            if(t.type === 'Transfer') {
+                const srcAcc = accounts.find(a => a.id == t.fromAccId);
+                const dstAcc = accounts.find(a => a.id == t.toAccId);
+                if(srcAcc) srcAcc.balance += t.amount; 
+                if(dstAcc) dstAcc.balance -= t.amount;
+            } else {
+                const acc = accounts.find(a => a.id == t.accId);
+                if(acc) {
+                    if(t.type === 'Income' || t.type === 'Receive') acc.balance -= t.amount;
+                    else if(t.type === 'Expense' || t.type === 'Pay') acc.balance += t.amount;
+                }
+            }
+
+            if(t.partnerName !== 'Daily' && t.partnerName !== 'Transfer') {
+                const p = partners.find(part => part.name === t.partnerName);
+                if(p) {
+                    if(t.type === 'Receive') p.receivable += t.amount;
+                    else if(t.type === 'Pay') p.payable += t.amount;
+                    p.txns = p.txns.filter(pt => pt.id !== t.id);
+                }
+            }
+        }
+
+        function openDailyTxnModal(id = null) {
+            editingTxnId = id;
+            const s = document.getElementById('dtAccount'); 
+            s.innerHTML = '<option disabled selected value="">Select Account</option>';
+            accounts.forEach(a => s.innerHTML += `<option value="${a.id}">${a.name}</option>`);
+            
+            if(id) {
+                document.getElementById('dtModalTitle').innerText = "Edit Active Record";
+                const t = transactions.find(x => x.id == id);
+                document.getElementById('dtDate').value = t.date;
+                document.getElementById('dtDesc').value = t.desc || '';
+                document.getElementById('dtAmount').value = t.amount;
+                document.getElementById('dtAccount').value = t.accId || '';
+                setTxnType(t.type === 'Income' || t.type === 'Receive' ? 'Income' : 'Expense');
+                
+                if(t.partnerName !== 'Daily') document.getElementById('modalTxnTypeContainer').classList.add('hidden');
+                else document.getElementById('modalTxnTypeContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('dtModalTitle').innerText = "Add New Record";
+                document.getElementById('dtDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('modalTxnTypeContainer').classList.remove('hidden');
+                clearInputs(['dtDesc', 'dtAmount', 'dtAccount']);
+                setTxnType('Income');
+            }
+            openModal('dailyTxnModal');
+        }
+
+        function saveDailyTxn() {
+            const date = document.getElementById('dtDate').value;
+            const accId = document.getElementById('dtAccount').value;
+            const amt = parseFloat(document.getElementById('dtAmount').value);
+            const desc = document.getElementById('dtDesc').value.trim();
+            
+            if(!date || !accId || isNaN(amt) || amt <= 0) return alert("വിവരങ്ങൾ പരിശോധിക്കുക!");
+
+            if(editingTxnId) {
+                const t = transactions.find(x => x.id == editingTxnId);
+                rollbackTransactionMechanics(t);
+
+                const acc = accounts.find(a => a.id == accId);
+                t.date = date; t.amount = amt; t.desc = desc; t.accId = acc.id; t.accName = acc.name;
+
+                if(t.partnerName === 'Daily') {
+                    t.type = currentTxnType;
+                    if(currentTxnType === 'Income') acc.balance += amt; else acc.balance -= amt;
+                } else {
+                    const p = partners.find(part => part.name === t.partnerName);
+                    if(t.type === 'Receive') {
+                        acc.balance += amt;
+                        if(p.receivable >= amt) p.receivable -= amt; else { const diff = amt - p.receivable; p.receivable = 0; p.payable += diff; }
+                    } else {
+                        acc.balance -= amt;
+                        if(p.payable >= amt) p.payable -= amt; else { const diff = amt - p.payable; p.payable = 0; p.receivable += diff; }
+                    }
+                    p.txns.push(t);
+                }
+                editingTxnId = null;
+            } else {
+                const acc = accounts.find(a => a.id == accId);
+                if(currentTxnType === 'Income') acc.balance += amt; else acc.balance -= amt;
+                
+                transactions.push({ 
+                    id: Date.now(), date: date, amount: amt, type: currentTxnType, 
+                    desc: desc || currentTxnType, accName: acc.name, accId: acc.id, partnerName: 'Daily' 
+                });
+            }
+            
+            saveData(); closeModal('dailyTxnModal');
+            if(activePartnerId) viewPartner(activePartnerId);
+            if(activeAccountId) viewAccount(activeAccountId);
+        }
+
+        // --- INTERNAL TRANSFERS MANAGEMENT ---
+        function processTransfer() {
+            const fromId = document.getElementById('tfFrom').value;
+            const toId = document.getElementById('tfTo').value;
+            const amt = parseFloat(document.getElementById('tfAmount').value);
+
+            if(!fromId || !toId || isNaN(amt) || amt <= 0) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
+            if(fromId === toId) return alert("അക്കൗണ്ടുകൾ വ്യത്യസ്തമായിരിക്കണം!");
+
+            const from = accounts.find(a => a.id == fromId);
+            const to = accounts.find(a => a.id == toId);
+            if(from.balance < amt) return alert("അക്കൗണ്ടിൽ ആവശ്യത്തിന് പണമില്ല!");
+
+            from.balance -= amt; to.balance += amt;
+            
+            transactions.push({ 
+                id: Date.now(), date: new Date().toISOString().split('T')[0], amount: amt, type: 'Transfer', 
+                desc: `Transfer: ${from.name} → ${to.name}`, accName: 'Internal', fromAccId: from.id, toAccId: to.id, partnerName: 'Transfer' 
+            });
+            
+            saveData(); closeModal('transferModal'); clearInputs(['tfAmount']);
+        }
+
+        // --- PARTNER DIRECT SETTLEMENT ---
+        function openPartnerPayModal(type) {
+            if(accounts.length === 0) return alert("ആദ്യം ഒരു അക്കൗണ്ട് വോലറ്റ് നിർമ്മിക്കുക!");
+            activePPType = type; 
+            document.getElementById('ppTitle').innerText = type === 'Receive' ? "RECEIVE (വാലറ്റിലേക്ക് വാങ്ങുക)" : "PAY (വാലറ്റിൽ നിന്ന് കൊടുക്കുക)";
+            const s = document.getElementById('ppAccount'); 
+            s.innerHTML = '<option disabled selected value="">വോലറ്റ് തിരഞ്ഞെടുക്കുക</option>';
+            accounts.forEach(a => s.innerHTML += `<option value="${a.id}">${a.name} (ബാലൻസ്: ₹${a.balance})</option>`);
+            openModal('partnerPayModal');
+        }
+
+        function processPartnerPayment() {
+            const accId = document.getElementById('ppAccount').value;
+            const amt = parseFloat(document.getElementById('ppAmount').value);
+            if(!accId || isNaN(amt) || amt <= 0) return alert("വിവരങ്ങൾ നൽകുക!");
+
+            const acc = accounts.find(a => a.id == accId);
+            const p = partners.find(part => part.id == activePartnerId);
+            const tId = Date.now();
+
+            if(activePPType === 'Receive') acc.balance += amt; 
+            else { if(acc.balance < amt) return alert("വോളറ്റിൽ പണമില്ല!"); acc.balance -= amt; }
+
+            if(activePPType === 'Receive') {
+                if(p.receivable >= amt) p.receivable -= amt; else { const diff = amt - p.receivable; p.receivable = 0; p.payable += diff; }
+            } else {
+                if(p.payable >= amt) p.payable -= amt; else { const diff = amt - p.payable; p.payable = 0; p.receivable += diff; }
+            }
+
+            const txn = { id: tId, date: new Date().toISOString().split('T')[0], amount: amt, type: activePPType, accName: acc.name, accId: acc.id, partnerName: p.name, desc: `${activePPType}: ${p.name}` };
+            p.txns.push(txn); transactions.push(txn);
+            
+            saveData(); viewPartner(activePartnerId); closeModal('partnerPayModal'); clearInputs(['ppAmount']);
+        }
+
+        // --- RECYCLE BIN & UNDO SAFEKEEPING SYSTEM ---
+        function executeTrashPurge(txnId) {
+            if(!confirm("Are you sure you want to delete this entry? ഇത് ട്രഷിലേക്ക് (Recycle Bin) മാറ്റപ്പെടും.")) return;
+            const t = transactions.find(x => x.id == txnId);
+            if(!t) return;
+
+            rollbackTransactionMechanics(t);
+            transactions = transactions.filter(x => x.id !== txnId);
+            trashBin.push(t);
+            
+            saveData();
+            if(activePartnerId) viewPartner(activePartnerId);
+            if(activeAccountId) viewAccount(activeAccountId);
+        }
+
+        function restoreFromTrash(txnId) {
+            if(!confirm("ഈ റെക്കോർഡ് പൂർണ്ണമായി Undo (Restore) ചെയ്യണോ? നിങ്ങളുടെ അക്കൗണ്ടുകൾ വീണ്ടും പഴയതുപോലെ അപ്ഡേറ്റ് ചെയ്യപ്പെടും.")) return;
+            const t = trashBin.find(x => x.id == txnId);
+            if(!t) return;
+
+            const accExists = accounts.some(a => a.id == t.accId || a.id == t.fromAccId);
+            if(!accExists && t.type !== 'Transfer') return alert("ഈ ഇടപാടുമായി ബന്ധപ്പെട്ട അക്കൗണ്ട് വോലറ്റ് ഡിലീറ്റ് ചെയ്യപ്പെട്ടതിനാൽ ഇത് തിരികെ എടുക്കാൻ സാധിക്കില്ല!");
+
+            if(t.type === 'Transfer') {
+                const srcAcc = accounts.find(a => a.id == t.fromAccId);
+                const dstAcc = accounts.find(a => a.id == t.toAccId);
+                if(srcAcc) srcAcc.balance -= t.amount; 
+                if(dstAcc) dstAcc.balance += t.amount;
+            } else {
+                const acc = accounts.find(a => a.id == t.accId);
+                if(t.type === 'Income' || t.type === 'Receive') acc.balance += t.amount;
+                else if(t.type === 'Expense' || t.type === 'Pay') acc.balance -= t.amount;
+            }
+
+            if(t.partnerName !== 'Daily' && t.partnerName !== 'Transfer') {
+                const p = partners.find(part => part.name === t.partnerName);
+                if(p) {
+                    if(t.type === 'Receive') p.receivable -= t.amount;
+                    else if(t.type === 'Pay') p.payable -= t.amount;
+                    p.txns.push(t);
+                }
+            }
+
+            trashBin = trashBin.filter(x => x.id !== txnId);
+            transactions.push(t);
+            saveData();
+        }
+
+        // --- CORE UI SYNCHRONIZATION GRAPHICS LAYER ---
+        function updateUI() {
+            let tot = 0, c = 0, b = 0; 
+            const filterDate = document.getElementById('dateFilter').value;
+            
+            const aC = document.getElementById('accountsContainer'); aC.innerHTML = '';
+            accounts.forEach(a => {
+                tot += a.balance; if(a.category === 'Cash') c += a.balance; else b += a.balance;
+                aC.innerHTML += `<div onclick="viewAccount(${a.id})" class="custom-card p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer hover:border-slate-600 transition shadow-md">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-700">
+                            <i class="fa-solid ${a.category === 'Cash' ? 'fa-wallet' : 'fa-building-columns'}"></i>
+                        </div>
+                        <div><h4 class="font-bold text-sm text-white">${a.name}</h4><p class="text-[9px] text-slate-500 uppercase font-black">${a.category}</p></div>
+                    </div>
+                    <b class="text-emerald-400 font-black">₹${a.balance.toLocaleString()}</b>
+                </div>`;
+            });
+
+            const dC = document.getElementById('dailyHistoryContainer'); dC.innerHTML = '';
+            const filteredTxns = filterDate ? transactions.filter(t => t.date === filterDate) : transactions;
+            if(filteredTxns.length === 0) dC.innerHTML = `<p class="text-center text-slate-600 text-xs py-8">ഈ തീയതിയിൽ ഇടപാടുകൾ ഒന്നുമില്ല</p>`;
+
+            filteredTxns.slice().reverse().forEach(t => {
+                let borderTheme = 'border-l-blue-500'; let valueTheme = 'text-white';
+                if(t.type === 'Income' || t.type === 'Receive') { borderTheme = 'border-l-emerald-500'; valueTheme='text-emerald-400'; }
+                else if(t.type === 'Expense' || t.type === 'Pay') { borderTheme = 'border-l-rose-500'; valueTheme='text-rose-500'; }
+
+                dC.innerHTML += `<div class="custom-card p-4 rounded-2xl flex justify-between items-center border-l-4 ${borderTheme}">
+                    <div>
+                        <h4 class="text-xs font-black text-white uppercase">${t.desc || (t.partnerName + ' ('+t.type+')')}</h4>
+                        <p class="text-[9px] text-slate-500 font-bold">${t.date} • Wallet: ${t.accName}</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <b class="${valueTheme} text-xs font-black mr-2">₹${t.amount.toLocaleString()}</b>
+                        <button onclick="openDailyTxnModal(${t.id})"><i class="fa-solid fa-pen-to-square text-slate-500 hover:text-blue-400 p-2 text-xs"></i></button>
+                        <button onclick="executeTrashPurge(${t.id})"><i class="fa-solid fa-trash-can text-slate-600 hover:text-rose-500 p-2 text-xs"></i></button>
+                    </div>
+                </div>`;
+            });
+
+            const pC = document.getElementById('partnersContainer'); pC.innerHTML = '';
+            const realPartners = partners.filter(p => p.name !== 'Daily' && p.name !== 'Transfer');
+            if(realPartners.length === 0) pC.innerHTML = `<p class="text-center text-slate-600 text-xs py-8">പാർട്ണർമാർ ആരും ഇല്ല.</p>`;
+
+            realPartners.forEach(p => {
+                const net = p.receivable - p.payable;
+                let color = "text-slate-400"; if(net > 0) color = "text-emerald-400"; else if (net < 0) color = "text-rose-500";
+                pC.innerHTML += `<div onclick="viewPartner(${p.id})" class="custom-card p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer hover:border-slate-600 transition shadow-md">
+                    <div>
+                        <h4 class="font-bold text-sm text-white">${p.name}</h4>
+                        <div class="flex gap-2 text-[8px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider"><span>തരാനുള്ളത്: ₹${p.receivable}</span> • <span>കൊടുക്കാനുള്ളത്: ₹${p.payable}</span></div>
+                    </div>
+                    <b class="${color} font-black text-sm">₹${net.toLocaleString()}</b>
+                </div>`;
+            });
+
+            const trashContainer = document.getElementById('trashContainer');
+            trashContainer.innerHTML = trashBin.length ? '' : `<p class="text-xs text-slate-600 py-2">Trash Empty (ഡിലീറ്റ് ചെയ്തവ ഇവിടെ കാണാം)</p>`;
+            trashBin.slice().reverse().forEach(t => {
+                trashContainer.innerHTML += `<div class="bg-slate-950/60 p-3 rounded-xl border border-slate-900 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="text-slate-500 text-[10px] block">${t.date}</span>
+                        <span class="text-slate-400 font-bold">${t.desc} (${t.partnerName})</span>
+                        <b class="text-slate-400 block text-[10px]">₹${t.amount}</b>
+                    </div>
+                    <button onclick="restoreFromTrash(${t.id})" class="bg-blue-950 text-blue-400 px-3 py-1.5 rounded-lg font-bold text-[10px] hover:bg-blue-900/40 transition"><i class="fa-solid fa-rotate-left mr-1"></i> UNDO</button>
+                </div>`;
+            });
+
+            document.getElementById('totalBalanceDisplay').innerText = `₹${tot.toLocaleString()}`;
+            document.getElementById('navBalanceDisplay').innerText = `₹${tot.toLocaleString()}`;
+            document.getElementById('sumCash').innerText = `₹${c.toLocaleString()}`;
+            document.getElementById('sumBank').innerText = `₹${b.toLocaleString()}`;
+        }
+       
+function exportBackup() {
+    const data = {
+        appData: localStorage.getItem('appData'),
+        products: localStorage.getItem('products'),
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stockflow-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('Backup ഡൗൺലോഡായി!');
+}
+
+function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.appData) localStorage.setItem('appData', data.appData);
+            if (data.products) localStorage.setItem('products', data.products);
+            alert('Backup Restore ആയി! പേജ് റീഫ്രഷ് ചെയ്യുന്നു...');
+            location.reload();
+        } catch (err) {
+            alert('Backup ഫയൽ ശരിയല്ല!');
+        }
+    };
+    reader.readAsText(file);
+} 
+    </script>
+</body>
+</html>
