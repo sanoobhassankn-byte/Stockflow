@@ -1,6 +1,7 @@
 {
   "name": "Stockflow",
   "short_name": "Stockflow",
+  "description": "KNS Group Stock Management ERP",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
